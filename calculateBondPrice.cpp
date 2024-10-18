@@ -7,6 +7,7 @@
 #include <chrono>
 #include <random>
 #include <algorithm>
+#include "order_matching_bonds.hpp"
 
 // Separate arrays for bond attributes
 std::vector<double> faceValues;
@@ -109,6 +110,16 @@ int main()
     couponRates.resize(portfolioSize, 0.05);
     yieldsToMaturity.resize(portfolioSize, 0.04);
     yearsToMaturity.resize(portfolioSize, 10);
+    bondPrices.resize(portfolioSize, 0.0);
+
+    // Create an OrderBook instance
+    OrderBook orderBook;
+
+    // Add some initial orders
+    orderBook.addOrder(100.5, 10, "order123", true);  // Buy order
+    orderBook.addOrder(101.0, 5, "order124", false);  // Sell order
+    orderBook.addOrder(99.5, 20, "order125", true);   // Buy order
+    orderBook.addOrder(100.0, 15, "order126", false); // Sell order
 
     // Launch threads for live data updates and pricing calculations
     std::thread updateThread(simulateLiveDataUpdates);
@@ -120,13 +131,19 @@ int main()
         std::lock_guard<std::mutex> lock(bondMutex);
         
         // Calculate bond prices using parallel processing (4 threads for this example)
-        std::vector<double> bondPrices = priceBondPortfolioParallel(4);
+        bondPrices = priceBondPortfolioParallel(4);
 
         std::cout << "Bond Prices (first 10):" << std::endl;
         for (size_t i = 0; i < std::min(size_t(10), bondPrices.size()); ++i)
         {
             std::cout << bondPrices[i] << std::endl;
         }
+
+        // Update bond prices in the OrderBook
+        orderBook.updateBondPrices(bondPrices);
+
+        // Match orders based on updated bond prices
+        orderBook.matchOrders();
     }
 
     updateThread.join();
