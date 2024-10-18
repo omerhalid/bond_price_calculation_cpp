@@ -2,6 +2,7 @@
 #include <chrono>
 #include <queue>
 #include <unordered_map>
+#include <vector>
 
 struct Order {
     double price;
@@ -18,7 +19,6 @@ struct Order {
 class OrderBook
 {
 private:
-
     struct BuyOrderComparator
     {
         bool operator()(const Order& lhs, const Order& rhs)
@@ -37,9 +37,24 @@ private:
     };
 
     template <typename Compare>
-    void removeFromHeap(std::priority_queue<Order, std::vector<Order>, Compare> &heap, std::string id)
+    void removeFromHeap(std::priority_queue<Order, std::vector<Order>, Compare> &heap, const std::string &id)
     {
-
+        std::vector<Order> temp;
+        temp.reserve(heap.size());
+    
+        while (!heap.empty())
+        {
+            if (id != heap.top().orderId)
+            {
+                temp.emplace_back(heap.top());
+            }
+            heap.pop();
+        }
+    
+        for (const auto &order : temp)
+        {
+            heap.push(order);
+        }
     }
 
     std::unordered_map<std::string, Order> orderMap;
@@ -63,7 +78,7 @@ public:
         matchOrders();
     }
 
-    void OrderBook::cancelOrder(std::string id)
+    void cancelOrder(std::string id)
     {
         if(orderMap.find(id) != orderMap.end())
         {
@@ -76,7 +91,12 @@ public:
 
     void modifyOrders(double newPrice, int newQuantity, std::string id, bool isBuyOrder)
     {
-
+        if(orderMap.find(id) != orderMap.end())
+        {
+            cancelOrder(id);
+            addOrder(newPrice, newQuantity, id, isBuyOrder);
+            matchOrders();
+        }
     }
 
     void matchOrders()
