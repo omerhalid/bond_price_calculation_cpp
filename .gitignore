@@ -1,2 +1,4 @@
 # Exclude all .exe files
 *.exe
+# build
+build/

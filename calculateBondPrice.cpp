@@ -97,6 +97,8 @@ std::vector<double> priceBondPortfolioParallel(size_t threadCount)
         auto partialPrices = future.get();
         allPrices.insert(allPrices.end(), partialPrices.begin(), partialPrices.end());
     }
+
+    return allPrices;
 }
 
 int main()
